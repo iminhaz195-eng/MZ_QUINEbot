@@ -2,7 +2,7 @@
 # =============================================================================
 #  MZ QUINE — AI Girlfriend Telegram Bot
 #  Created by: MZ MINHAZ SIR
-#  Version: 6.2.0 — Fully fixed, ready to run
+#  Version: 6.3.0 — Updated model chain (GPT-OSS)
 # =============================================================================
 
 import os
@@ -54,7 +54,7 @@ except ImportError:
 import signal
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CONFIGURATION — Credentials embedded
+# CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────
 TELEGRAM_BOT_TOKEN = "8959950012:AAFZLYGn_rRky34xd96Rt65XeVyqw9R_Afc"
 GROQ_API_KEY       = "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"
@@ -65,10 +65,13 @@ GROQ_MAX_TOKENS  = 1024
 GROQ_TEMPERATURE = 0.85
 GROQ_TOP_P       = 0.95
 
-MODELS = [
-    "llama-3.3-70b-versatile",
+# ── MODELS — FALLBACK CHAIN ──────────────────────────────────────────────────
+MODELS: list = [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
     "meta-llama/llama-4-scout-17b-16e-instruct",
     "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "llama-3.3-70b-versatile",
     "llama-3.1-8b-instant",
     "gemma2-9b-it",
     "mixtral-8x7b-32768",
@@ -1506,7 +1509,8 @@ def build_application():
 def print_banner():
     print("""
 ╔══════════════════════════════════════════════════════════════╗
-║   MZ QUINE — AI Girlfriend Bot v6.2.0                       ║
+║   MZ QUINE — AI Girlfriend Bot v6.3.0                       ║
+║   Primary: openai/gpt-oss-120b                              ║
 ║   Created by: MZ MINHAZ SIR ❤️                              ║
 ║   Admin ID: 8255204869                                       ║
 ╚══════════════════════════════════════════════════════════════╝
