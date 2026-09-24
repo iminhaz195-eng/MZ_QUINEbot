@@ -514,7 +514,7 @@ class VoiceEngine:
             if PYDUB_AVAILABLE:
                 def _conv():
                     audio = AudioSegment.f    filters,
-)
+
 from telegram.error import TelegramError, BadRequest
 
 # ── Groq ─────────────────────────────────────────────────────────────────────
