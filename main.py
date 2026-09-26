@@ -57,7 +57,7 @@ import signal
 #  CONFIGURATION
 # =============================================================================
 TELEGRAM_BOT_TOKEN = "8959950012:AAFZLYGn_rRky34xd96Rt65XeVyqw9R_Afc"
-GROQ_API_KEY       = "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"
+GROQ_API_KEY       = "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"
 ADMIN_IDS          = {8255204869}
 
 GROQ_MAX_TOKENS  = 1024
