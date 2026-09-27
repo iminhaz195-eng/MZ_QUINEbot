@@ -56,7 +56,7 @@ import signal
 # =============================================================================
 #  CONFIGURATION
 # =============================================================================
-TELEGRAM_BOT_TOKEN = "8959950012:AAFZLYGn_rRky34xd96Rt65XeVyqw9R_Afc"
+TELEGRAM_BOT_TOKEN = "8959950012:AAGJI_J8J5lh2VBrgUGL2vaBWmrEeyARuh0"
 GROQ_API_KEY       = "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"
 ADMIN_IDS          = {8255204869}
 
