@@ -2,7 +2,7 @@
 # =============================================================================
 #  MZ QUINE — AI Girlfriend Telegram Bot
 #  Created by: MZ MINHAZ SIR
-#  Version: 7.0.0 — Final, fully verified
+#  Version: 7.1.0 — Force-Join added
 # =============================================================================
 
 import os
@@ -75,6 +75,12 @@ MODELS: List[str] = [
     "gemma2-9b-it",
     "mixtral-8x7b-32768",
 ]
+
+# ── FORCE JOIN (Channel Membership) ─────────────────────────────────────────
+FORCE_JOIN_ENABLED = True
+FORCE_JOIN_CHANNEL = "@mz_creations_official"      # bot must be admin here
+FORCE_JOIN_LINK    = "https://t.me/mz_creations_official"
+FORCE_JOIN_NAME    = "MZ CREATIONS"
 
 DB_PATH = "mz_quine.db"
 
@@ -688,6 +694,51 @@ def preprocess_message(text):
         text = text[:MAX_MESSAGE_LENGTH] + "... [কাটা গেছে]"
     return text.strip()
 
+# ── FORCE JOIN HELPERS ──────────────────────────────────────────────────────
+async def is_channel_member(context, user_id: int) -> bool:
+    """User channel-e member kina check kore. Bot ke channel-e admin hote hobe."""
+    try:
+        member = await context.bot.get_chat_member(FORCE_JOIN_CHANNEL, user_id)
+        return member.status in ("member", "administrator", "creator")
+    except TelegramError as e:
+        logger.warning(f"Force-join check failed for {user_id}: {e}")
+        # Fail-open: bot admin na thakle user ke lock out korbe na
+        return True
+
+
+def join_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"📢 {FORCE_JOIN_NAME} — Join করুন", url=FORCE_JOIN_LINK)],
+        [InlineKeyboardButton("✅ Join করেছি — চেক করুন", callback_data="check_join")],
+    ])
+
+
+async def send_join_prompt(update, context):
+    text = (
+        "🔒 *Bot ব্যবহার করতে হলে আগে Channel-এ Join করতে হবে!*\n\n"
+        f"📢 Channel: *{FORCE_JOIN_NAME}*\n"
+        f"🔗 {FORCE_JOIN_LINK}\n\n"
+        "নিচের *Join* বাটনে ক্লিক করে Join করুন, তারপর "
+        "*✅ Join করেছি — চেক করুন* বাটনে চাপ দিন 💖"
+    )
+    kb = join_keyboard()
+    try:
+        if update.callback_query:
+            await update.callback_query.message.reply_text(
+                text, parse_mode="Markdown", reply_markup=kb)
+        elif update.message:
+            await update.message.reply_text(
+                text, parse_mode="Markdown", reply_markup=kb)
+        else:
+            await context.bot.send_message(
+                update.effective_chat.id, text,
+                parse_mode="Markdown", reply_markup=kb)
+    except Exception:
+        # Markdown fail korle plain text
+        if update.message:
+            await update.message.reply_text(text.replace("*", ""), reply_markup=kb)
+
+
 def admin_only(func):
     @wraps(func)
     async def wrapper(update, context, *a, **kw):
@@ -696,6 +747,7 @@ def admin_only(func):
             return
         return await func(update, context, *a, **kw)
     return wrapper
+
 
 def not_banned(func):
     @wraps(func)
@@ -707,6 +759,14 @@ def not_banned(func):
         if row and row["is_banned"]:
             await update.message.reply_text("🚫 তুমি ban হয়েছে।")
             return
+
+        # ── FORCE JOIN CHECK ───────────────────────────────────
+        if FORCE_JOIN_ENABLED and not is_admin(update.effective_user.id):
+            if not await is_channel_member(context, update.effective_user.id):
+                await send_join_prompt(update, context)
+                return
+        # ───────────────────────────────────────────────────────
+
         return await func(update, context, *a, **kw)
     return wrapper
 
@@ -1341,6 +1401,34 @@ async def handle_callback(update, context):
     data = q.data
     await q.answer()
 
+    # ── Force-Join re-check ────────────────────────────────────
+    if data == "check_join":
+        if await is_channel_member(context, uid):
+            await q.edit_message_text(
+                "✅ *ধন্যবাদ জান!* তুমি এখন verified 💖\n\n"
+                "এখন থেকে আমি তোমার সাথে কথা বলতে পারব 🌸\n"
+                "শুরু করতে নিচের বাটনে চাপ দাও 👇",
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("💬 চ্যাট শুরু করি", callback_data="act_chat")
+                ]])
+            )
+        else:
+            await q.answer(
+                "❌ তুমি এখনো Join করনি!\n"
+                f"অনুগ্রহ করে {FORCE_JOIN_NAME} চ্যানেলে Join করো।",
+                show_alert=True
+            )
+        return
+    # ───────────────────────────────────────────────────────────
+
+    # ── Force-join for other callbacks too ─────────────────────
+    if FORCE_JOIN_ENABLED and not is_admin(uid):
+        if not await is_channel_member(context, uid):
+            await send_join_prompt(update, context)
+            return
+    # ───────────────────────────────────────────────────────────
+
     if data == "act_chat":
         await q.edit_message_text("💬 আমার সাথে কথা বলো জান! লিখে পাঠাও 💖")
     elif data == "act_about":
@@ -1540,9 +1628,10 @@ def build_application():
 def print_banner():
     print("""
 ╔══════════════════════════════════════════════════════════════╗
-║   MZ QUINE — AI Girlfriend Bot v7.0.0                       ║
+║   MZ QUINE — AI Girlfriend Bot v7.1.0                       ║
 ║   Primary model: openai/gpt-oss-120b                        ║
 ║   Salam: Once per day only                                  ║
+║   Force-Join: @mz_creations_official                        ║
 ║   Created by: MZ MINHAZ SIR ❤️                              ║
 ║   Admin ID: 8255204869                                       ║
 ╚══════════════════════════════════════════════════════════════╝
